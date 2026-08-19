@@ -1,0 +1,33 @@
+{
+  "name": "peon-py",
+  "version": "0.1.0",
+  "description": "Work, work. CESP sound packs for Codex CLI sessions.",
+  "author": {
+    "name": "anrong",
+    "email": "HystericalDragons@proton.me"
+  },
+  "homepage": "https://github.com/xchacha20-poly1305/peon-py",
+  "repository": "https://github.com/xchacha20-poly1305/peon-py",
+  "license": "MIT",
+  "keywords": [
+    "sound",
+    "audio",
+    "openpeon",
+    "cesp",
+    "hooks"
+  ],
+  "hooks": "./hooks/codex-hooks.json",
+  "interface": {
+    "displayName": "peon-py",
+    "shortDescription": "Play OpenPeon sound packs on coding-agent events",
+    "longDescription": "peon-py implements the OpenPeon CESP v1.0 player contract: it maps agent lifecycle hooks to the nine standard sound categories and plays audio from any of the 100+ community sound packs.",
+    "developerName": "anrong",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://openpeon.com",
+    "brandColor": "#D97757"
+  }
+}
