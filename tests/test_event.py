@@ -204,7 +204,8 @@ def test_rapid_prompts_play_the_spam_sound(played, paths, monkeypatch):
 # --- venv gating ---
 
 def test_player_python_is_the_system_interpreter_until_the_venv_is_built(paths):
-    assert peon_event.player_python() == sys.executable
+    # Windows swaps in pythonw.exe when it sits next to the interpreter.
+    assert peon_event.player_python() == peon_event._windowless(sys.executable)
 
 
 def test_player_python_switches_to_the_venv_when_ready(paths):
@@ -213,7 +214,7 @@ def test_player_python_switches_to_the_venv_when_ready(paths):
     config.VENV_STATE_PATH.write_text(
         json.dumps(peon_event.expected_runtime_state()), encoding="utf-8")
     assert peon_event.venv_ready() is True
-    assert peon_event.player_python() == str(config.VENV_PY)
+    assert peon_event.player_python() == peon_event._windowless(str(config.VENV_PY))
 
 
 def test_a_stale_venv_state_is_not_accepted(paths):

@@ -26,8 +26,9 @@ def test_pipewire_is_preferred(only):
     assert peon_play.system_player_name() == "pw-play"
 
 
-def test_no_backend_reports_empty(only):
+def test_no_backend_reports_empty(only, monkeypatch):
     only(None)
+    monkeypatch.setattr(peon_play.os, "name", "posix")
     assert peon_play.system_player_name() == ""
 
 

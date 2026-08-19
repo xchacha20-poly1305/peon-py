@@ -5,6 +5,7 @@ the platform-dependent branches are written as pure functions of `os.name`.
 """
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -82,14 +83,20 @@ def test_the_player_interpreter_is_unchanged_off_windows(monkeypatch):
 def test_windows_prefers_pythonw_when_it_exists(monkeypatch, tmp_path):
     monkeypatch.setattr(peon_event.os, "name", "nt")
     (tmp_path / "pythonw.exe").write_text("")
-    exe = f"{tmp_path}/python.exe"
-    assert peon_event._windowless(exe) == f"{tmp_path}/pythonw.exe"
+    exe = os.path.join(str(tmp_path), "python.exe")
+    assert peon_event._windowless(exe) == os.path.join(str(tmp_path), "pythonw.exe")
 
 
 def test_windows_keeps_the_console_interpreter_when_pythonw_is_missing(monkeypatch, tmp_path):
     monkeypatch.setattr(peon_event.os, "name", "nt")
-    exe = f"{tmp_path}/python.exe"
+    exe = os.path.join(str(tmp_path), "python.exe")
     assert peon_event._windowless(exe) == exe
+
+
+def test_windows_reports_winsound_when_no_system_binary_is_installed(monkeypatch):
+    monkeypatch.setattr(peon_play.os, "name", "nt")
+    monkeypatch.setattr(peon_play.shutil, "which", lambda name: None)
+    assert peon_play.system_player_name() == "winsound/powershell"
 
 
 # ------------------------------- hook argv --------------------------------
