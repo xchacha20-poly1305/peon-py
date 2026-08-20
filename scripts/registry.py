@@ -146,7 +146,7 @@ def _check_preview(manifest: dict, pack_dir: Path) -> None:
     preview = manifest.get("preview")
     if not isinstance(preview, str) or not preview.strip():
         return
-    path = pack_mod.resolve_sound_path(pack_dir, preview)
+    path = pack_mod.resolve_sound_path(pack_dir, preview, prefix_sounds=False)
     if not path.is_file():
         raise RegistryError(f"manifest declares a missing preview: {preview}")
     size = path.stat().st_size

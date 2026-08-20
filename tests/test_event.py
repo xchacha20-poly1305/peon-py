@@ -9,7 +9,7 @@ import config
 import peon_event
 import pytest
 
-from .conftest import make_pack, write_config
+from .conftest import WAV_HEADER, make_pack, write_config
 
 THREE = {
     "session.start": [("hello.wav", "Ready to work?")],
@@ -314,6 +314,65 @@ def test_empty_rotation_list_keeps_the_configured_pack(paths, monkeypatch):
     feed_stdin(monkeypatch, {})
     peon_event.cmd_event("SessionStart")
     assert calls[0].endswith("a-start.wav")
+
+
+def _set_preview(pack_dir, rel: str, data: bytes | None = WAV_HEADER) -> None:
+    manifest_path = pack_dir / "openpeon.json"
+    manifest = json.loads(manifest_path.read_text("utf-8"))
+    manifest["preview"] = rel
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    if data is not None:
+        dest = pack_dir / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(data)
+
+
+def test_preview_plays_the_manifest_preview_file(paths, monkeypatch):
+    d = make_pack(paths / "packs", "peon", {"session.start": [("hello.wav", "hi")]})
+    _set_preview(d, "sounds/preview.wav")
+    calls = _capture_player(monkeypatch)
+    assert peon_event.cmd_preview() == 0
+    assert len(calls) == 1
+    assert calls[0].endswith("preview.wav")
+
+
+def test_preview_of_a_named_pack_ignores_the_active_one(paths, monkeypatch):
+    make_pack(paths / "packs", "peon", {"session.start": [("hello.wav", "hi")]})
+    other = make_pack(paths / "packs", "glados", {"session.start": [("hi.wav", "hi")]})
+    _set_preview(other, "preview.wav")
+    write_config(paths, {"pack": "peon"})
+    calls = _capture_player(monkeypatch)
+    assert peon_event.cmd_preview("glados") == 0
+    assert len(calls) == 1
+    assert calls[0].endswith("preview.wav")
+    assert "glados" in calls[0]
+
+
+def test_preview_missing_field_plays_nothing(paths, monkeypatch, capsys):
+    make_pack(paths / "packs", "peon", {"session.start": [("hello.wav", "hi")]})
+    calls = _capture_player(monkeypatch)
+    assert peon_event.cmd_preview() == 1
+    assert calls == []
+    assert "no preview" in capsys.readouterr().out
+
+
+def test_preview_missing_file_plays_nothing(paths, monkeypatch, capsys):
+    d = make_pack(paths / "packs", "peon", {"session.start": [("hello.wav", "hi")]})
+    _set_preview(d, "sounds/preview.wav", data=None)
+    calls = _capture_player(monkeypatch)
+    assert peon_event.cmd_preview() == 1
+    assert calls == []
+    out = capsys.readouterr().out
+    assert "missing" in out
+
+
+def test_preview_escaping_path_plays_nothing(paths, monkeypatch, capsys):
+    d = make_pack(paths / "packs", "peon", {"session.start": [("hello.wav", "hi")]})
+    _set_preview(d, "../escape.wav", data=None)
+    calls = _capture_player(monkeypatch)
+    assert peon_event.cmd_preview() == 1
+    assert calls == []
+    assert "not usable" in capsys.readouterr().out
 
 
 def test_play_follows_the_event_map_overlay(paths, monkeypatch):

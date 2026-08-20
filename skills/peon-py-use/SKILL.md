@@ -14,8 +14,8 @@ that is `${CLAUDE_PLUGIN_ROOT}/scripts/peon_event.py`, in Codex `${PLUGIN_ROOT}/
 The examples below use `<plugin>/scripts/peon_event.py` for whichever applies.
 
 In Claude Code the same operations are also available as `/peon-install`, `/peon-list`,
-`/peon-set`, `/peon-volume`, `/peon-mute`, `/peon-test` and `/peon-doctor` — prefer those
-when the user typed one of them.
+`/peon-set`, `/peon-volume`, `/peon-mute`, `/peon-test`, `/peon-preview` and `/peon-doctor`
+— prefer those when the user typed one of them.
 
 ## Install a pack
 
@@ -52,6 +52,8 @@ empty list or `off` keeps using `pack`.
 ```bash
 <plugin>/scripts/peon_event.py doctor        # packs, active pack, venv, fallback player
 <plugin>/scripts/peon_event.py test task.complete
+<plugin>/scripts/peon_event.py preview       # play the active pack's preview file, if any
+<plugin>/scripts/peon_event.py preview glados
 ```
 
 Config lives at `~/.config/peon-py/config.json`; logs at

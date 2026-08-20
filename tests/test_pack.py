@@ -70,6 +70,14 @@ def test_bare_filenames_get_the_sounds_prefix(paths):
     assert pack_mod.resolve_sound_path(d, "Hello.wav") == (d / "sounds" / "Hello.wav").resolve()
 
 
+def test_preview_paths_are_resolved_as_written(paths):
+    d = paths / "packs" / "peon"
+    assert pack_mod.resolve_sound_path(
+        d, "preview.wav", prefix_sounds=False) == (d / "preview.wav").resolve()
+    assert pack_mod.resolve_sound_path(
+        d, "sounds/preview.wav", prefix_sounds=False) == (d / "sounds" / "preview.wav").resolve()
+
+
 @pytest.mark.parametrize("bad", [
     "../../etc/passwd",
     "sounds/../../escape.wav",

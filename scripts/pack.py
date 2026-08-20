@@ -62,12 +62,14 @@ def discover_packs(cwd: Path | None = None) -> dict[str, Path]:
     return found
 
 
-def resolve_sound_path(pack_dir: Path, file_value: str) -> Path:
-    """Resolve a manifest `file` entry to an absolute path inside the pack.
+def resolve_sound_path(pack_dir: Path, file_value: str,
+                       *, prefix_sounds: bool = True) -> Path:
+    """Resolve a manifest path to an absolute path inside the pack.
 
     Per spec 3.1 the path is relative to the manifest, uses forward slashes and
-    must not escape the pack root. Bare filenames get the `sounds/` prefix that
-    INTEGRATE.md prescribes.
+    must not escape the pack root. Bare sound filenames get the `sounds/`
+    prefix that INTEGRATE.md prescribes; preview (and similar) paths are used
+    as written, so pass `prefix_sounds=False`.
     """
     raw = (file_value or "").strip()
     if not raw:
@@ -76,7 +78,7 @@ def resolve_sound_path(pack_dir: Path, file_value: str) -> Path:
         raise PackError(f"sound path must use forward slashes: {raw!r}")
     if raw.startswith("/") or (len(raw) > 1 and raw[1] == ":"):
         raise PackError(f"sound path must be relative: {raw!r}")
-    if "/" not in raw:
+    if prefix_sounds and "/" not in raw:
         raw = f"sounds/{raw}"
     root = pack_dir.resolve()
     resolved = (root / raw).resolve()

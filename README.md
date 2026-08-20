@@ -89,6 +89,7 @@ codex plugin add peon-py@anrong-plugins
 | `/peon-volume [0.0-1.0]` | Get or set the master volume |
 | `/peon-mute [on\|off]` | Mute or unmute everything |
 | `/peon-test [category]` | Play one sound right now |
+| `/peon-preview [pack]` | Play the installed pack's manifest preview file |
 | `/peon-doctor` | Packs, config, audio runtime status |
 
 Everything is also available directly: `scripts/peon_event.py <subcommand>`, plus

@@ -11,6 +11,7 @@ Usage:
     peon_event.py volume [0.0-1.0]  # get/set master volume
     peon_event.py mute [on|off]     # get/toggle global mute
     peon_event.py test [category]   # play one sound now
+    peon_event.py preview [pack]    # play the pack's manifest preview file
     peon_event.py doctor            # config, packs and runtime status
     peon_event.py venv-install      # internal: build the managed venv
 
@@ -507,6 +508,49 @@ def cmd_test(category: str = "") -> int:
     return 0
 
 
+def cmd_preview(name: str = "") -> int:
+    """Play the installed pack's manifest `preview` file. No category fallback."""
+    cfg = config.load_user_config()
+    if cfg.get("muted"):
+        print("sounds are muted; run `peon_event.py mute off` first")
+        return 1
+    packs = pack_mod.discover_packs()
+    name = name.strip()
+    if name:
+        if name not in packs:
+            print(f"pack {name!r} is not installed. Installed: {', '.join(sorted(packs)) or 'none'}")
+            return 1
+        pack_name, pack_dir = name, packs[name]
+    else:
+        selected = pack_mod.active_pack(cfg, preferred=session_preferred(cfg))
+        if selected is None:
+            print("No sound packs installed.")
+            return 1
+        pack_name, pack_dir = selected
+    try:
+        manifest = pack_mod.load_manifest(pack_dir)
+    except pack_mod.PackError as e:
+        print(f"error: {e}")
+        return 1
+    preview = manifest.get("preview")
+    if not isinstance(preview, str) or not preview.strip():
+        print(f"{pack_name} has no preview")
+        return 1
+    try:
+        path = pack_mod.resolve_sound_path(pack_dir, preview, prefix_sounds=False)
+    except pack_mod.PackError:
+        print(f"{pack_name}: preview path is not usable")
+        return 1
+    if not path.is_file():
+        print(f"{pack_name}: preview file is missing ({preview})")
+        return 1
+    if not venv_ready():
+        spawn_venv_installer()
+    spawn_player(path, config.clamp_volume(cfg.get("volume")))
+    print(f"playing preview: {pack_name} ({path.name})")
+    return 0
+
+
 def bad_audio_files(pack_dir: Path) -> list[str]:
     """Sounds in `pack_dir` whose bytes do not match their extension.
 
@@ -609,6 +653,7 @@ def main() -> int:
         "volume": lambda: cmd_volume(rest[0] if rest else ""),
         "mute": lambda: cmd_mute(rest[0] if rest else ""),
         "test": lambda: cmd_test(rest[0] if rest else ""),
+        "preview": lambda: cmd_preview(rest[0] if rest else ""),
         "doctor": lambda: cmd_doctor(),
         "venv-install": lambda: 0 if install_venv() else 1,
     }
