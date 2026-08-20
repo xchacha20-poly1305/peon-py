@@ -88,6 +88,7 @@ codex plugin add peon-py@anrong-plugins
 | `/peon-set <pack>` | Switch the active pack |
 | `/peon-volume [0.0-1.0]` | Get or set the master volume |
 | `/peon-mute [on\|off]` | Mute or unmute everything |
+| `/peon-category [name [on\|off]]` | List or toggle a CESP category |
 | `/peon-test [category]` | Play one sound right now |
 | `/peon-preview [pack]` | Play the installed pack's manifest preview file |
 | `/peon-doctor` | Packs, config, audio runtime status |
@@ -140,7 +141,7 @@ debounce keeps bursts of events from turning into a burst of audio.
 }
 ```
 
-Set any category to `false` to mute just that one.
+Set any category to `false` to mute just that one, or run `/peon-category task.progress on`.
 
 `pack_rotation_mode` is `off` (the default — always use `pack`), `random`, or
 `round-robin`. With `random` or `round-robin`, each `SessionStart` picks one

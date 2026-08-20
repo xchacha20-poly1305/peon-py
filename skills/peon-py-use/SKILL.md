@@ -14,8 +14,8 @@ that is `${CLAUDE_PLUGIN_ROOT}/scripts/peon_event.py`, in Codex `${PLUGIN_ROOT}/
 The examples below use `<plugin>/scripts/peon_event.py` for whichever applies.
 
 In Claude Code the same operations are also available as `/peon-install`, `/peon-list`,
-`/peon-set`, `/peon-volume`, `/peon-mute`, `/peon-test`, `/peon-preview` and `/peon-doctor`
-— prefer those when the user typed one of them.
+`/peon-set`, `/peon-volume`, `/peon-mute`, `/peon-category`, `/peon-test`, `/peon-preview`
+and `/peon-doctor` — prefer those when the user typed one of them.
 
 ## Install a pack
 
@@ -45,6 +45,8 @@ empty list or `off` keeps using `pack`.
 <plugin>/scripts/peon_event.py volume 0.3    # set it
 <plugin>/scripts/peon_event.py mute          # toggle
 <plugin>/scripts/peon_event.py mute off
+<plugin>/scripts/peon_event.py category                 # list the nine CESP categories
+<plugin>/scripts/peon_event.py category task.progress on
 ```
 
 ## Debug
@@ -65,9 +67,9 @@ On Windows those paths move to `%APPDATA%\peon-py\` (config) and `%LOCALAPPDATA%
 (logs, play state, venv). `doctor` prints the ones actually in effect, so read them from its
 output rather than guessing.
 
-Per-category muting is done by editing `categories` in the config file; the nine CESP
-categories are `session.start`, `session.end`, `task.acknowledge`, `task.complete`,
-`task.error`, `task.progress`, `input.required`, `resource.limit`, `user.spam`.
+Per-category muting is `category <name> on|off`; the nine CESP categories are
+`session.start`, `session.end`, `task.acknowledge`, `task.complete`, `task.error`,
+`task.progress`, `input.required`, `resource.limit`, `user.spam`.
 
 To remap a hook event onto a different CESP category, set `event_map` in the config file
 (e.g. `"Stop": "task.acknowledge"`). Only the nine spec category names are accepted;

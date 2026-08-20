@@ -366,6 +366,35 @@ def test_preview_missing_file_plays_nothing(paths, monkeypatch, capsys):
     assert "missing" in out
 
 
+def test_category_lists_all_nine_spec_names(paths, capsys):
+    assert peon_event.cmd_category() == 0
+    out = capsys.readouterr().out
+    lines = {line.split()[0]: line.split()[-1] for line in out.splitlines() if line.split()}
+    assert list(lines) == list(config.ALL_CATEGORIES)
+    assert lines["task.complete"] == "on"
+    assert lines["task.progress"] == "off"
+
+
+def test_category_on_off_persists_across_a_load(paths, capsys):
+    assert peon_event.cmd_category("task.progress", "on") == 0
+    capsys.readouterr()
+    assert config.load_user_config()["categories"]["task.progress"] is True
+    assert peon_event.cmd_category() == 0
+    flags = {
+        line.split()[0]: line.split()[-1]
+        for line in capsys.readouterr().out.splitlines() if line.split()
+    }
+    assert flags["task.progress"] == "on"
+    assert peon_event.cmd_category("task.progress", "off") == 0
+    assert config.load_user_config()["categories"]["task.progress"] is False
+
+
+def test_unknown_category_name_does_not_persist_a_new_key(paths, capsys):
+    assert peon_event.cmd_category("task.explode", "on") == 1
+    assert "task.explode" not in config.load_user_config()["categories"]
+    assert "unknown category" in capsys.readouterr().out
+
+
 def test_preview_escaping_path_plays_nothing(paths, monkeypatch, capsys):
     d = make_pack(paths / "packs", "peon", {"session.start": [("hello.wav", "hi")]})
     _set_preview(d, "../escape.wav", data=None)

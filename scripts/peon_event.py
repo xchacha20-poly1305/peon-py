@@ -12,6 +12,7 @@ Usage:
     peon_event.py mute [on|off]     # get/toggle global mute
     peon_event.py test [category]   # play one sound now
     peon_event.py preview [pack]    # play the pack's manifest preview file
+    peon_event.py category [name [on|off]]  # list or toggle a CESP category
     peon_event.py doctor            # config, packs and runtime status
     peon_event.py venv-install      # internal: build the managed venv
 
@@ -551,6 +552,38 @@ def cmd_preview(name: str = "") -> int:
     return 0
 
 
+def cmd_category(name: str = "", value: str = "") -> int:
+    """List CESP categories, or enable/disable one by name."""
+    cfg = config.load_user_config()
+    name = name.strip()
+    if not name:
+        width = max(len(c) for c in config.ALL_CATEGORIES)
+        for c in config.ALL_CATEGORIES:
+            flag = "on" if config.category_enabled(cfg, c) else "off"
+            print(f"{c:<{width}}  {flag}")
+        return 0
+    if name not in config.ALL_CATEGORIES:
+        print(f"unknown category {name!r}; valid: {', '.join(config.ALL_CATEGORIES)}")
+        return 1
+    word = value.strip().lower()
+    if not word:
+        flag = "on" if config.category_enabled(cfg, name) else "off"
+        print(f"{name}: {flag}")
+        return 0
+    if word in ("on", "true", "yes", "1"):
+        enabled = True
+    elif word in ("off", "false", "no", "0"):
+        enabled = False
+    else:
+        print(f"usage: peon_event.py category [<name> [on|off]] (got {value!r})")
+        return 1
+    cfg.setdefault("categories", dict(config.DEFAULT_CATEGORY_ENABLED))
+    cfg["categories"][name] = enabled
+    config.save_user_config(cfg)
+    print(f"{name}: {'on' if enabled else 'off'}")
+    return 0
+
+
 def bad_audio_files(pack_dir: Path) -> list[str]:
     """Sounds in `pack_dir` whose bytes do not match their extension.
 
@@ -654,6 +687,8 @@ def main() -> int:
         "mute": lambda: cmd_mute(rest[0] if rest else ""),
         "test": lambda: cmd_test(rest[0] if rest else ""),
         "preview": lambda: cmd_preview(rest[0] if rest else ""),
+        "category": lambda: cmd_category(
+            rest[0] if rest else "", rest[1] if len(rest) > 1 else ""),
         "doctor": lambda: cmd_doctor(),
         "venv-install": lambda: 0 if install_venv() else 1,
     }
