@@ -1,7 +1,7 @@
 {
   "name": "peon-py",
-  "version": "0.1.0",
-  "description": "Work, work. OpenPeon (CESP v1.0) sound packs for Claude Code — audio feedback on session, task, error and permission events.",
+  "version": "0.2.0",
+  "description": "Another [openpeon](https://openpeon.com/) implementation for Claude Code / Codex plugin.",
   "author": {
     "name": "anrong",
     "email": "HystericalDragons@proton.me"
