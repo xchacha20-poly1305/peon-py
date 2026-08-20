@@ -87,6 +87,9 @@ DEFAULT_CONFIG: dict = {
     # `off` (or an empty list) keeps today's single-pack selection.
     "pack_rotation": [],
     "pack_rotation_mode": "off",
+    # Overlay on EVENT_CATEGORIES. Values must be CESP category names;
+    # unknown keys/values are dropped at load (spec 1.3).
+    "event_map": {},
 }
 
 
@@ -207,6 +210,15 @@ def load_user_config() -> dict:
         elif key == "pack_rotation_mode":
             if value in ROTATION_MODES:
                 cfg["pack_rotation_mode"] = value
+        elif key == "event_map":
+            if isinstance(value, dict):
+                cfg["event_map"] = {
+                    event: category
+                    for event, category in value.items()
+                    if event in EVENT_CATEGORIES
+                    and isinstance(category, str)
+                    and category in ALL_CATEGORIES
+                }
         elif key in cfg:
             cfg[key] = value
     return cfg
@@ -217,6 +229,21 @@ def save_user_config(cfg: dict) -> None:
     tmp = CONFIG_PATH.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(cfg, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     tmp.replace(CONFIG_PATH)
+
+
+def mapped_category(cfg: dict, event: str) -> str | None:
+    """CESP category for a hook event, honouring a user overlay.
+
+    Invented category names in the overlay are ignored and the documented
+    default for that event is kept. Events absent from EVENT_CATEGORIES
+    still map to nothing.
+    """
+    overlay = cfg.get("event_map")
+    if isinstance(overlay, dict):
+        category = overlay.get(event)
+        if isinstance(category, str) and category in ALL_CATEGORIES:
+            return category
+    return EVENT_CATEGORIES.get(event)
 
 
 def category_enabled(cfg: dict, category: str) -> bool:

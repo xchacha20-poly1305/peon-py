@@ -60,8 +60,9 @@ for this session when `pack_rotation_mode` is `random` or `round-robin`.
 ## Changing the event mapping
 
 Edit `config.EVENT_CATEGORIES`, then regenerate/adjust both hook files — a test asserts the
-two sets stay identical. Claude hooks are `async: true`; Codex runs hooks synchronously and
-ignores the flag, which is why its timeouts stay at 5 s.
+two sets stay identical. Users overlay that table with `event_map` in config.json; values
+must be CESP category names (spec 1.3). Claude hooks are `async: true`; Codex runs hooks
+synchronously and ignores the flag, which is why its timeouts stay at 5 s.
 
 ## Audio runtime
 

@@ -83,6 +83,36 @@ def test_two_slow_prompts_stay_acknowledge(paths):
     assert peon_event.category_for_event("UserPromptSubmit", cfg, state, later) == "task.acknowledge"
 
 
+def test_event_map_overlay_remaps_a_documented_event(paths):
+    write_config(paths, {"event_map": {"Stop": "task.acknowledge"}})
+    cfg = config.load_user_config()
+    state = peon_event.load_play_state()
+    assert peon_event.category_for_event("Stop", cfg, state, 1000) == "task.acknowledge"
+
+
+def test_an_invented_overlay_category_keeps_the_default(paths):
+    write_config(paths, {"event_map": {"Stop": "task.explode"}})
+    cfg = config.load_user_config()
+    state = peon_event.load_play_state()
+    assert "Stop" not in cfg["event_map"]
+    assert peon_event.category_for_event("Stop", cfg, state, 1000) == "task.complete"
+
+
+def test_an_unmentioned_event_keeps_the_documented_default(paths):
+    write_config(paths, {"event_map": {"Stop": "task.acknowledge"}})
+    cfg = config.load_user_config()
+    state = peon_event.load_play_state()
+    assert peon_event.category_for_event("SessionStart", cfg, state, 1000) == "session.start"
+
+
+def test_rapid_prompts_stay_spam_even_when_acknowledge_is_remapped(paths):
+    write_config(paths, {"event_map": {"UserPromptSubmit": "task.complete"}})
+    cfg = config.load_user_config()
+    state = peon_event.load_play_state()
+    assert peon_event.category_for_event("UserPromptSubmit", cfg, state, 1000) == "task.complete"
+    assert peon_event.category_for_event("UserPromptSubmit", cfg, state, 1500) == "user.spam"
+
+
 # --- play_category gating ---
 
 def test_playing_a_category_spawns_the_player(played, paths):
@@ -284,6 +314,19 @@ def test_empty_rotation_list_keeps_the_configured_pack(paths, monkeypatch):
     feed_stdin(monkeypatch, {})
     peon_event.cmd_event("SessionStart")
     assert calls[0].endswith("a-start.wav")
+
+
+def test_play_follows_the_event_map_overlay(paths, monkeypatch):
+    make_pack(paths / "packs", "peon", {
+        "task.complete": [("done.wav", "done")],
+        "task.acknowledge": [("ack.wav", "ack")],
+    })
+    write_config(paths, {"event_map": {"Stop": "task.acknowledge"}})
+    calls = _capture_player(monkeypatch)
+    feed_stdin(monkeypatch, {})
+    peon_event.cmd_event("Stop")
+    assert len(calls) == 1
+    assert calls[0].endswith("ack.wav")
 
 
 def test_rapid_prompts_play_the_spam_sound(played, paths, monkeypatch):

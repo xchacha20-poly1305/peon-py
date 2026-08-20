@@ -66,3 +66,8 @@ output rather than guessing.
 Per-category muting is done by editing `categories` in the config file; the nine CESP
 categories are `session.start`, `session.end`, `task.acknowledge`, `task.complete`,
 `task.error`, `task.progress`, `input.required`, `resource.limit`, `user.spam`.
+
+To remap a hook event onto a different CESP category, set `event_map` in the config file
+(e.g. `"Stop": "task.acknowledge"`). Only the nine spec category names are accepted;
+anything else is dropped and that event keeps its documented default. Two
+`UserPromptSubmit` events inside the spam window still play `user.spam`.

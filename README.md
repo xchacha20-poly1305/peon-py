@@ -128,6 +128,9 @@ debounce keeps bursts of events from turning into a burst of audio.
   "spam_window_ms": 4000,
   "pack_rotation": ["peon", "glados"],
   "pack_rotation_mode": "off",
+  "event_map": {
+    "Stop": "task.acknowledge"
+  },
   "categories": {
     "session.start": true,
     "task.complete": true,
@@ -143,6 +146,11 @@ Set any category to `false` to mute just that one.
 *installed* pack from `pack_rotation` and later events in that session keep it.
 Names that are missing or not installed are skipped; an empty list behaves like
 `off`.
+
+`event_map` overlays the hook-event → CESP-category table (see above). Values
+must be one of the nine spec categories; an unknown name is ignored and that
+event keeps its documented default. Rapid `UserPromptSubmit` still becomes
+`user.spam`.
 
 ## Where things live
 

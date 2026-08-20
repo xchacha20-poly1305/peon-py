@@ -49,6 +49,7 @@ def test_defaults_when_no_config_file(paths):
     assert cfg["categories"]["task.progress"] is False
     assert cfg["pack_rotation"] == []
     assert cfg["pack_rotation_mode"] == "off"
+    assert cfg["event_map"] == {}
 
 
 def test_user_values_merge_over_defaults(paths):
@@ -85,6 +86,30 @@ def test_an_unknown_rotation_mode_keeps_the_default(paths):
 def test_a_non_list_rotation_is_ignored(paths):
     write_config(paths, {"pack_rotation": "peon"})
     assert config.load_user_config()["pack_rotation"] == []
+
+
+def test_event_map_overlay_keeps_only_spec_categories(paths):
+    write_config(paths, {
+        "event_map": {
+            "Stop": "task.acknowledge",
+            "SessionStart": "task.explode",
+            "NotAHook": "task.complete",
+            "PreCompact": 1,
+        },
+    })
+    cfg = config.load_user_config()
+    assert cfg["event_map"] == {"Stop": "task.acknowledge"}
+
+
+def test_mapped_category_uses_the_overlay_then_the_default(paths):
+    cfg = {
+        "event_map": {"Stop": "task.acknowledge", "SessionStart": "task.explode"},
+    }
+    assert config.mapped_category(cfg, "Stop") == "task.acknowledge"
+    # Invented overlay value: keep the documented default.
+    assert config.mapped_category(cfg, "SessionStart") == "session.start"
+    assert config.mapped_category(cfg, "PreCompact") == "resource.limit"
+    assert config.mapped_category(cfg, "SomeFutureHook") is None
 
 
 def test_corrupt_config_falls_back_to_defaults(paths):

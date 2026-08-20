@@ -344,7 +344,7 @@ def read_hook_payload() -> dict:
 
 def category_for_event(event: str, cfg: dict, state: dict, now: int) -> str | None:
     """Map a hook event to a CESP category, handling the spam special case."""
-    category = config.EVENT_CATEGORIES.get(event)
+    category = config.mapped_category(cfg, event)
     if category is None:
         return None
     if event == config.SPAM_SOURCE_EVENT:
