@@ -14,7 +14,7 @@ import json
 import os
 from pathlib import Path
 
-PLUGIN_VERSION = "0.1.0"
+PLUGIN_VERSION = "0.2.1"
 CESP_VERSION = "1.0"
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
