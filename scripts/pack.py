@@ -184,11 +184,54 @@ def select_sound(
     return (rng or random).choice(pool)
 
 
-def active_pack(cfg: dict, cwd: Path | None = None) -> tuple[str, Path] | None:
-    """The pack to play from: the configured one, or the sole installed one."""
+def rotation_mode(cfg: dict) -> str:
+    """`random` / `round-robin`, or `off` when rotation is not in use."""
+    mode = cfg.get("pack_rotation_mode")
+    return mode if mode in ("random", "round-robin") else "off"
+
+
+def rotation_candidates(cfg: dict, packs: dict[str, Path]) -> list[str]:
+    """Installed names from `pack_rotation`, in list order, duplicates dropped.
+
+    Names that are missing or not installed are skipped, never an error.
+    """
+    raw = cfg.get("pack_rotation")
+    if not isinstance(raw, list):
+        return []
+    out: list[str] = []
+    for name in raw:
+        if isinstance(name, str) and name in packs and name not in out:
+            out.append(name)
+    return out
+
+
+def next_rotated_pack(
+    cfg: dict,
+    packs: dict[str, Path],
+    last_name: str | None = None,
+    rng: random.Random | None = None,
+) -> str | None:
+    """Pack to use for a new session, or None when rotation is off or empty."""
+    mode = rotation_mode(cfg)
+    candidates = rotation_candidates(cfg, packs)
+    if mode == "off" or not candidates:
+        return None
+    if mode == "round-robin":
+        if isinstance(last_name, str) and last_name in candidates:
+            return candidates[(candidates.index(last_name) + 1) % len(candidates)]
+        return candidates[0]
+    return (rng or random).choice(candidates)
+
+
+def active_pack(cfg: dict, cwd: Path | None = None,
+                preferred: str | None = None) -> tuple[str, Path] | None:
+    """The pack to play from: the session pick, the configured one, or a default."""
     packs = discover_packs(cwd)
     if not packs:
         return None
+    # A session pick from rotation sticks until the next SessionStart tick.
+    if rotation_mode(cfg) != "off" and isinstance(preferred, str) and preferred in packs:
+        return preferred, packs[preferred]
     name = cfg.get("pack")
     if isinstance(name, str) and name:
         return (name, packs[name]) if name in packs else None

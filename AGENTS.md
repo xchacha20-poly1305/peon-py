@@ -54,7 +54,8 @@ shebang under Git Bash, so nothing may depend on an interpreter name in the comm
 ## Two processes, one state file
 
 pet4agents needs a daemon because it draws a window; we don't. `play-state.json` holds the
-last file and last timestamp per category, which is all no-repeat and debounce require.
+last file and last timestamp per category (no-repeat and debounce), plus the pack chosen
+for this session when `pack_rotation_mode` is `random` or `round-robin`.
 
 ## Changing the event mapping
 

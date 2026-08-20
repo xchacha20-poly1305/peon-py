@@ -33,6 +33,11 @@ when the user typed one of them.
 <plugin>/scripts/peon_event.py set <pack>
 ```
 
+To rotate between several installed packs, edit `pack_rotation` (an array of pack names)
+and `pack_rotation_mode` (`off`, `random`, or `round-robin`) in the config file. Each
+session start picks one *installed* name from the list; missing names are skipped. An
+empty list or `off` keeps using `pack`.
+
 ## Volume and mute
 
 ```bash

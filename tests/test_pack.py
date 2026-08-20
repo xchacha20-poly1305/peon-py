@@ -198,3 +198,61 @@ def test_active_pack_is_none_when_nothing_is_installed(paths):
 def test_active_pack_is_none_when_the_configured_pack_is_gone(paths):
     make_pack(paths / "packs", "peon", {"session.start": [("a.wav", "x")]})
     assert pack_mod.active_pack({"pack": "deleted"}) is None
+
+
+def test_round_robin_walks_the_configured_list(paths):
+    make_pack(paths / "packs", "alpha", {"session.start": [("a.wav", "x")]})
+    make_pack(paths / "packs", "bravo", {"session.start": [("b.wav", "x")]})
+    packs = pack_mod.discover_packs()
+    cfg = {"pack_rotation": ["alpha", "bravo"], "pack_rotation_mode": "round-robin"}
+    assert pack_mod.next_rotated_pack(cfg, packs, None) == "alpha"
+    assert pack_mod.next_rotated_pack(cfg, packs, "alpha") == "bravo"
+    assert pack_mod.next_rotated_pack(cfg, packs, "bravo") == "alpha"
+
+
+def test_rotation_skips_names_that_are_not_installed(paths):
+    make_pack(paths / "packs", "alpha", {"session.start": [("a.wav", "x")]})
+    packs = pack_mod.discover_packs()
+    cfg = {"pack_rotation": ["ghost", "alpha", "deleted"], "pack_rotation_mode": "round-robin"}
+    assert pack_mod.rotation_candidates(cfg, packs) == ["alpha"]
+    assert pack_mod.next_rotated_pack(cfg, packs, None) == "alpha"
+
+
+def test_rotation_off_or_empty_picks_nothing(paths):
+    make_pack(paths / "packs", "alpha", {"session.start": [("a.wav", "x")]})
+    packs = pack_mod.discover_packs()
+    assert pack_mod.next_rotated_pack(
+        {"pack_rotation": ["alpha"], "pack_rotation_mode": "off"}, packs) is None
+    assert pack_mod.next_rotated_pack(
+        {"pack_rotation": [], "pack_rotation_mode": "round-robin"}, packs) is None
+
+
+def test_random_rotation_uses_the_injected_rng(paths):
+    make_pack(paths / "packs", "alpha", {"session.start": [("a.wav", "x")]})
+    make_pack(paths / "packs", "bravo", {"session.start": [("b.wav", "x")]})
+    packs = pack_mod.discover_packs()
+    cfg = {"pack_rotation": ["alpha", "bravo"], "pack_rotation_mode": "random"}
+
+    class PickLast:
+        def choice(self, seq):
+            return seq[-1]
+
+    assert pack_mod.next_rotated_pack(cfg, packs, rng=PickLast()) == "bravo"
+
+
+def test_active_pack_prefers_the_session_pick_when_rotating(paths):
+    make_pack(paths / "packs", "alpha", {"session.start": [("a.wav", "x")]})
+    make_pack(paths / "packs", "bravo", {"session.start": [("b.wav", "x")]})
+    cfg = {
+        "pack": "alpha",
+        "pack_rotation": ["alpha", "bravo"],
+        "pack_rotation_mode": "round-robin",
+    }
+    assert pack_mod.active_pack(cfg, preferred="bravo")[0] == "bravo"
+
+
+def test_active_pack_ignores_the_session_pick_when_rotation_is_off(paths):
+    make_pack(paths / "packs", "alpha", {"session.start": [("a.wav", "x")]})
+    make_pack(paths / "packs", "bravo", {"session.start": [("b.wav", "x")]})
+    cfg = {"pack": "alpha", "pack_rotation": ["bravo"], "pack_rotation_mode": "off"}
+    assert pack_mod.active_pack(cfg, preferred="bravo")[0] == "alpha"

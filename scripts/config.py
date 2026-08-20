@@ -73,6 +73,8 @@ DEFAULT_CATEGORY_ENABLED: dict[str, bool] = {
     name: name != "task.progress" for name in ALL_CATEGORIES
 }
 
+ROTATION_MODES = ("off", "random", "round-robin")
+
 DEFAULT_CONFIG: dict = {
     "pack": None,          # None = use the only installed pack, if there is one
     "volume": 0.5,         # 0.0 - 1.0
@@ -81,6 +83,10 @@ DEFAULT_CONFIG: dict = {
     "debounce_ms": 500,    # per-category floor between two sounds
     "spam_window_ms": 4000,
     "max_log_size": 5 * 1024 * 1024,
+    # Spec 8.2 MAY: pick one installed pack from this list on SessionStart.
+    # `off` (or an empty list) keeps today's single-pack selection.
+    "pack_rotation": [],
+    "pack_rotation_mode": "off",
 }
 
 
@@ -189,6 +195,18 @@ def load_user_config() -> dict:
             cfg["categories"].update(
                 {k: bool(v) for k, v in value.items() if k in ALL_CATEGORIES}
             )
+        elif key == "pack_rotation":
+            if isinstance(value, list):
+                seen: list[str] = []
+                for name in value:
+                    if isinstance(name, str):
+                        name = name.strip()
+                        if name and name not in seen:
+                            seen.append(name)
+                cfg["pack_rotation"] = seen
+        elif key == "pack_rotation_mode":
+            if value in ROTATION_MODES:
+                cfg["pack_rotation_mode"] = value
         elif key in cfg:
             cfg[key] = value
     return cfg

@@ -192,6 +192,100 @@ def test_cmd_event_ignores_unmapped_events(played, paths, monkeypatch):
     assert played == []
 
 
+# --- pack rotation (spec 8.2 MAY) ---
+
+def _two_session_packs(paths) -> None:
+    make_pack(paths / "packs", "alpha", {
+        "session.start": [("a-start.wav", "A start")],
+        "task.complete": [("a-done.wav", "A done")],
+    })
+    make_pack(paths / "packs", "bravo", {
+        "session.start": [("b-start.wav", "B start")],
+        "task.complete": [("b-done.wav", "B done")],
+    })
+
+
+def _capture_player(monkeypatch) -> list[str]:
+    calls: list[str] = []
+    monkeypatch.setattr(peon_event, "spawn_player", lambda p, v: calls.append(str(p)))
+    monkeypatch.setattr(peon_event, "venv_ready", lambda: True)
+    return calls
+
+
+def test_round_robin_advances_on_each_session_start(paths, monkeypatch):
+    _two_session_packs(paths)
+    write_config(paths, {
+        "pack": "alpha",
+        "pack_rotation": ["alpha", "bravo"],
+        "pack_rotation_mode": "round-robin",
+        "debounce_ms": 0,
+    })
+    calls = _capture_player(monkeypatch)
+    feed_stdin(monkeypatch, {})
+    peon_event.cmd_event("SessionStart")
+    peon_event.cmd_event("SessionStart")
+    assert calls[0].endswith("a-start.wav")
+    assert calls[1].endswith("b-start.wav")
+
+
+def test_a_second_play_in_the_same_session_keeps_the_rotated_pack(paths, monkeypatch):
+    _two_session_packs(paths)
+    write_config(paths, {
+        "pack": "bravo",
+        "pack_rotation": ["alpha", "bravo"],
+        "pack_rotation_mode": "round-robin",
+        "debounce_ms": 0,
+    })
+    calls = _capture_player(monkeypatch)
+    feed_stdin(monkeypatch, {})
+    peon_event.cmd_event("SessionStart")
+    peon_event.play_category("task.complete")
+    assert calls[0].endswith("a-start.wav")
+    assert calls[1].endswith("a-done.wav")
+
+
+def test_rotation_skips_names_that_are_not_on_disk(paths, monkeypatch):
+    _two_session_packs(paths)
+    write_config(paths, {
+        "pack": "alpha",
+        "pack_rotation": ["ghost", "alpha", "deleted", "bravo"],
+        "pack_rotation_mode": "round-robin",
+        "debounce_ms": 0,
+    })
+    calls = _capture_player(monkeypatch)
+    feed_stdin(monkeypatch, {})
+    peon_event.cmd_event("SessionStart")
+    peon_event.cmd_event("SessionStart")
+    assert calls[0].endswith("a-start.wav")
+    assert calls[1].endswith("b-start.wav")
+
+
+def test_rotation_off_keeps_the_configured_pack(paths, monkeypatch):
+    _two_session_packs(paths)
+    write_config(paths, {
+        "pack": "alpha",
+        "pack_rotation": ["bravo"],
+        "pack_rotation_mode": "off",
+    })
+    calls = _capture_player(monkeypatch)
+    feed_stdin(monkeypatch, {})
+    peon_event.cmd_event("SessionStart")
+    assert calls[0].endswith("a-start.wav")
+
+
+def test_empty_rotation_list_keeps_the_configured_pack(paths, monkeypatch):
+    _two_session_packs(paths)
+    write_config(paths, {
+        "pack": "alpha",
+        "pack_rotation": [],
+        "pack_rotation_mode": "round-robin",
+    })
+    calls = _capture_player(monkeypatch)
+    feed_stdin(monkeypatch, {})
+    peon_event.cmd_event("SessionStart")
+    assert calls[0].endswith("a-start.wav")
+
+
 def test_rapid_prompts_play_the_spam_sound(played, paths, monkeypatch):
     feed_stdin(monkeypatch, {})
     peon_event.cmd_event("UserPromptSubmit")

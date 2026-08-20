@@ -17,8 +17,8 @@ they would for any download.
 
 | Path | Contents |
 |---|---|
-| `~/.config/peon-py/config.json` | Active pack, volume, mute state, per-category toggles |
-| `~/.local/state/peon-py/play-state.json` | Last sound and timestamp per category (for no-repeat and debounce) |
+| `~/.config/peon-py/config.json` | Active pack, volume, mute state, per-category toggles, pack rotation |
+| `~/.local/state/peon-py/play-state.json` | Last sound and timestamp per category (no-repeat, debounce); session pack when rotating |
 | `~/.local/state/peon-py/event.log` | Diagnostics: skipped events, pack errors. Truncated at 5 MB |
 | `~/.local/state/peon-py/install.log` | Output of the audio runtime build |
 | `~/.local/share/peon-py/venv/` | The managed audio virtualenv |

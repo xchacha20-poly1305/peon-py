@@ -57,8 +57,9 @@ def _log_install(line: str) -> None:
 # ------------------------------- play state -------------------------------
 #
 # One small JSON file replaces the daemon pet4agents needs: it only has to
-# remember the last sound per category (no-repeat) and the last play time
-# (debounce). Writes are last-one-wins, which is fine for hints like these.
+# remember the last sound per category (no-repeat), the last play time
+# (debounce), and the pack picked for this session when rotation is on.
+# Writes are last-one-wins, which is fine for hints like these.
 
 
 def load_play_state() -> dict:
@@ -85,6 +86,35 @@ def save_play_state(state: dict) -> None:
 
 def now_ms() -> int:
     return int(time.time() * 1000)
+
+
+def tick_rotation(cfg: dict, state: dict, rng=None) -> str | None:
+    """Pick the pack for a new session and persist it on `state`.
+
+    Called on SessionStart. Missing or uninstalled names are skipped by
+    `pack.next_rotated_pack`; an empty/off rotation clears any leftover
+    session pick so later plays fall back to the configured pack.
+    """
+    packs = pack_mod.discover_packs()
+    last = state.get("rotation_last")
+    last = last if isinstance(last, str) else None
+    chosen = pack_mod.next_rotated_pack(cfg, packs, last, rng)
+    if chosen is None:
+        state.pop("session_pack", None)
+        return None
+    state["session_pack"] = chosen
+    state["rotation_last"] = chosen
+    return chosen
+
+
+def session_preferred(cfg: dict, state: dict | None = None) -> str | None:
+    """Session pack to prefer while rotation is on, else None."""
+    if pack_mod.rotation_mode(cfg) == "off":
+        return None
+    if state is None:
+        state = load_play_state()
+    name = state.get("session_pack")
+    return name if isinstance(name, str) and name else None
 
 
 # ------------------------------ managed venv ------------------------------
@@ -266,7 +296,7 @@ def play_category(category: str, cfg: dict | None = None, *,
         if isinstance(last, (int, float)) and now - last < int(cfg.get("debounce_ms", 500)):
             return None
 
-    selected = pack_mod.active_pack(cfg)
+    selected = pack_mod.active_pack(cfg, preferred=session_preferred(cfg, state))
     if selected is None:
         _log(f"no pack installed; skipping {category}")
         return None
@@ -332,6 +362,8 @@ def cmd_event(event: str) -> None:
 
     state = load_play_state()
     now = now_ms()
+    if event == "SessionStart":
+        tick_rotation(cfg, state)
     category = category_for_event(event, cfg, state, now)
     # `category_for_event` records the prompt timestamp used for spam detection.
     save_play_state(state)
@@ -350,7 +382,7 @@ def cmd_list() -> int:
         print("No sound packs installed.")
         print(f"Install one with: peon_event.py install peon  (-> {config.GLOBAL_PACKS_DIR})")
         return 0
-    selected = pack_mod.active_pack(cfg)
+    selected = pack_mod.active_pack(cfg, preferred=session_preferred(cfg))
     active_name = selected[0] if selected else None
     for name in sorted(packs):
         marker = "*" if name == active_name else " "
@@ -501,7 +533,7 @@ def bad_audio_files(pack_dir: Path) -> list[str]:
 def cmd_doctor() -> int:
     cfg = config.load_user_config()
     packs = pack_mod.discover_packs()
-    selected = pack_mod.active_pack(cfg)
+    selected = pack_mod.active_pack(cfg, preferred=session_preferred(cfg))
     print(f"peon-py {config.PLUGIN_VERSION} (CESP {config.CESP_VERSION})")
     print(f"platform     : {sys.platform} (os.name={os.name}), python {sys.version.split()[0]}")
     print(f"config       : {config.CONFIG_PATH}")
@@ -509,6 +541,15 @@ def cmd_doctor() -> int:
     print(f"pack search  : {', '.join(str(p) for p in config.packs_dirs())}")
     print(f"installed    : {', '.join(sorted(packs)) or 'none'}")
     print(f"active pack  : {selected[0] if selected else 'none'}")
+    mode = pack_mod.rotation_mode(cfg)
+    if mode == "off":
+        print("rotation     : off")
+    else:
+        listed = ", ".join(
+            n for n in (cfg.get("pack_rotation") or []) if isinstance(n, str)
+        ) or "(empty)"
+        print(f"rotation     : {mode} [{listed}]  "
+              f"session: {session_preferred(cfg) or 'none yet'}")
     if selected:
         bad = bad_audio_files(selected[1])
         status = "ok" if not bad else f"{len(bad)} file(s) fail the spec 4.4 magic-byte check"

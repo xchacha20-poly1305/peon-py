@@ -47,6 +47,8 @@ def test_defaults_when_no_config_file(paths):
     assert cfg["categories"]["task.complete"] is True
     # task.progress fires on every tool call, so it stays off by default.
     assert cfg["categories"]["task.progress"] is False
+    assert cfg["pack_rotation"] == []
+    assert cfg["pack_rotation_mode"] == "off"
 
 
 def test_user_values_merge_over_defaults(paths):
@@ -63,6 +65,26 @@ def test_unknown_keys_and_categories_are_ignored(paths):
     cfg = config.load_user_config()
     assert "nonsense" not in cfg
     assert "task.explode" not in cfg["categories"]
+
+
+def test_rotation_list_is_sanitised_and_mode_is_checked(paths):
+    write_config(paths, {
+        "pack_rotation": ["peon", "peon", " glados ", 3, ""],
+        "pack_rotation_mode": "round-robin",
+    })
+    cfg = config.load_user_config()
+    assert cfg["pack_rotation"] == ["peon", "glados"]
+    assert cfg["pack_rotation_mode"] == "round-robin"
+
+
+def test_an_unknown_rotation_mode_keeps_the_default(paths):
+    write_config(paths, {"pack_rotation_mode": "session_override"})
+    assert config.load_user_config()["pack_rotation_mode"] == "off"
+
+
+def test_a_non_list_rotation_is_ignored(paths):
+    write_config(paths, {"pack_rotation": "peon"})
+    assert config.load_user_config()["pack_rotation"] == []
 
 
 def test_corrupt_config_falls_back_to_defaults(paths):

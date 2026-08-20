@@ -126,6 +126,8 @@ debounce keeps bursts of events from turning into a burst of audio.
   "muted": false,
   "debounce_ms": 500,
   "spam_window_ms": 4000,
+  "pack_rotation": ["peon", "glados"],
+  "pack_rotation_mode": "off",
   "categories": {
     "session.start": true,
     "task.complete": true,
@@ -135,6 +137,12 @@ debounce keeps bursts of events from turning into a burst of audio.
 ```
 
 Set any category to `false` to mute just that one.
+
+`pack_rotation_mode` is `off` (the default — always use `pack`), `random`, or
+`round-robin`. With `random` or `round-robin`, each `SessionStart` picks one
+*installed* pack from `pack_rotation` and later events in that session keep it.
+Names that are missing or not installed are skipped; an empty list behaves like
+`off`.
 
 ## Where things live
 
