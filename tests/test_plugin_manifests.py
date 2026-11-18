@@ -19,14 +19,20 @@ def load(path: str) -> dict:
 @pytest.mark.parametrize("path", [
     ".claude-plugin/plugin.json",
     ".codex-plugin/plugin.json",
+    ".antigravity-plugin/plugin.json",
     "hooks/hooks.json",
     "hooks/codex-hooks.json",
+    "hooks.json",
 ])
 def test_manifest_is_valid_json(path):
     assert isinstance(load(path), dict)
 
 
-@pytest.mark.parametrize("path", [".claude-plugin/plugin.json", ".codex-plugin/plugin.json"])
+@pytest.mark.parametrize("path", [
+    ".claude-plugin/plugin.json",
+    ".codex-plugin/plugin.json",
+    ".antigravity-plugin/plugin.json",
+])
 def test_plugin_version_matches_the_code(path):
     plugin = load(path)
     assert plugin["name"] == "peon-py"
@@ -66,6 +72,23 @@ def test_session_start_may_take_long_enough_to_start_the_runtime_build():
 
 def test_codex_plugin_points_at_its_hook_file():
     assert load(".codex-plugin/plugin.json")["hooks"] == "./hooks/codex-hooks.json"
+
+
+def test_antigravity_hooks_match_documented_schema():
+    group = load("hooks.json")["peon-py"]
+    assert group.get("enabled") is True
+    events = {k: v for k, v in group.items() if k != "enabled"}
+    assert set(events) == set(config.ANTIGRAVITY_EVENT_CATEGORIES)
+    for event, entries in events.items():
+        if event in ("PreToolUse", "PostToolUse"):
+            handlers = [h for entry in entries for h in entry["hooks"]]
+        else:
+            handlers = entries
+        assert handlers
+        for hook in handlers:
+            assert hook["type"] == "command"
+            assert hook["command"] == f"./scripts/peon_event.py {event} --agent antigravity"
+            assert hook["timeout"] >= 5
 
 
 @pytest.mark.parametrize("script", ["peon_event.py", "peon_play.py"])

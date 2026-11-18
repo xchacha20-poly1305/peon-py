@@ -64,6 +64,19 @@ EVENT_CATEGORIES: dict[str, str] = {
     "PostToolUse": "task.progress",
 }
 
+# Antigravity exposes a smaller, differently-named hook surface (no
+# UserPromptSubmit or PostToolUseFailure). Keep EVENT_CATEGORIES exact for
+# Claude/Codex and overlay Antigravity defaults when `--agent antigravity`.
+ANTIGRAVITY_EVENT_CATEGORIES: dict[str, str] = {
+    "SessionStart": "session.start",
+    "PreInvocation": "task.acknowledge",
+    "PreToolUse": "task.progress",
+    "PostToolUse": "task.progress",
+    "Stop": "task.complete",
+}
+
+ALL_EVENT_NAMES: frozenset[str] = frozenset(EVENT_CATEGORIES) | frozenset(ANTIGRAVITY_EVENT_CATEGORIES)
+
 SPAM_CATEGORY = "user.spam"
 SPAM_SOURCE_EVENT = "UserPromptSubmit"
 
@@ -215,7 +228,7 @@ def load_user_config() -> dict:
                 cfg["event_map"] = {
                     event: category
                     for event, category in value.items()
-                    if event in EVENT_CATEGORIES
+                    if event in ALL_EVENT_NAMES
                     and isinstance(category, str)
                     and category in ALL_CATEGORIES
                 }
@@ -231,19 +244,20 @@ def save_user_config(cfg: dict) -> None:
     tmp.replace(CONFIG_PATH)
 
 
-def mapped_category(cfg: dict, event: str) -> str | None:
+def mapped_category(cfg: dict, event: str, agent: str = "") -> str | None:
     """CESP category for a hook event, honouring a user overlay.
 
     Invented category names in the overlay are ignored and the documented
-    default for that event is kept. Events absent from EVENT_CATEGORIES
-    still map to nothing.
+    default for that event is kept. Events absent from the agent's event
+    table still map to nothing.
     """
     overlay = cfg.get("event_map")
     if isinstance(overlay, dict):
         category = overlay.get(event)
         if isinstance(category, str) and category in ALL_CATEGORIES:
             return category
-    return EVENT_CATEGORIES.get(event)
+    table = ANTIGRAVITY_EVENT_CATEGORIES if agent == "antigravity" else EVENT_CATEGORIES
+    return table.get(event)
 
 
 def category_enabled(cfg: dict, category: str) -> bool:

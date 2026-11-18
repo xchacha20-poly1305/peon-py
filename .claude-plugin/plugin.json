@@ -9,5 +9,6 @@
   "homepage": "https://github.com/xchacha20-poly1305/peon-py",
   "repository": "https://github.com/xchacha20-poly1305/peon-py",
   "license": "MIT",
-  "keywords": ["sound", "audio", "openpeon", "cesp", "notifications", "peon"]
+  "keywords": ["sound", "audio", "openpeon", "cesp", "notifications", "peon"],
+  "hooks": "./hooks/hooks.json"
 }
