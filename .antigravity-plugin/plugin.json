@@ -1,0 +1,28 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "peon-py",
+  "displayName": "peon-py",
+  "version": "0.2.1",
+  "description": "Play OpenPeon (CESP v1.0) sound packs on coding-agent lifecycle events.",
+  "author": {
+    "name": "anrong",
+    "email": "HystericalDragons@proton.me"
+  },
+  "homepage": "https://github.com/xchacha20-poly1305/peon-py",
+  "repository": "https://github.com/xchacha20-poly1305/peon-py",
+  "license": "MIT",
+  "logo": "assets/logo.svg",
+  "keywords": [
+    "sound",
+    "audio",
+    "openpeon",
+    "cesp",
+    "notifications",
+    "hooks"
+  ],
+  "suggestedPrompts": [
+    "List installed OpenPeon sound packs",
+    "Check peon-py audio runtime status with doctor",
+    "Install the peon sound pack and test playback"
+  ]
+}

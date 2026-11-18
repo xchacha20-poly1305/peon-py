@@ -1,0 +1,50 @@
+{
+  "peon-py": {
+    "enabled": true,
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "./scripts/peon_event.py SessionStart --agent antigravity",
+        "timeout": 5
+      }
+    ],
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "./scripts/peon_event.py PreInvocation --agent antigravity",
+        "timeout": 5
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./scripts/peon_event.py PreToolUse --agent antigravity",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./scripts/peon_event.py PostToolUse --agent antigravity",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "./scripts/peon_event.py Stop --agent antigravity",
+        "timeout": 5
+      }
+    ]
+  }
+}

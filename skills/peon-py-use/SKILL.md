@@ -10,7 +10,8 @@ peon-py plays OpenPeon (CESP v1.0) sound packs on agent lifecycle events. Its ho
 the active pack.
 
 Every operation goes through that one script. Run it from the plugin root — in Claude Code
-that is `${CLAUDE_PLUGIN_ROOT}/scripts/peon_event.py`, in Codex `${PLUGIN_ROOT}/scripts/peon_event.py`.
+that is `${CLAUDE_PLUGIN_ROOT}/scripts/peon_event.py`, in Codex `${PLUGIN_ROOT}/scripts/peon_event.py`,
+in Antigravity `./scripts/peon_event.py` inside the installed plugin directory.
 The examples below use `<plugin>/scripts/peon_event.py` for whichever applies.
 
 In Claude Code the same operations are also available as `/peon-install`, `/peon-list`,

@@ -344,34 +344,86 @@ def read_hook_payload() -> dict:
         return {}
 
 
-def category_for_event(event: str, cfg: dict, state: dict, now: int) -> str | None:
+def _apply_spam_window(category: str, cfg: dict, state: dict, now: int) -> str:
+    """Return `user.spam` when prompts arrive faster than `spam_window_ms`."""
+    last = state["last_played_ms"].get(config.SPAM_SOURCE_EVENT, 0)
+    window = int(cfg.get("spam_window_ms", 4000))
+    state["last_played_ms"][config.SPAM_SOURCE_EVENT] = now
+    if isinstance(last, (int, float)) and last and now - last < window:
+        return config.SPAM_CATEGORY
+    return category
+
+
+def _antigravity_category(
+    event: str, cfg: dict, state: dict, now: int, payload: dict
+) -> str | None:
+    """Resolve Antigravity's payload-carrying events into CESP categories."""
+    if event == "PreInvocation":
+        # Only the first model invocation of a turn (invocationNum == 0) is a
+        # new user prompt; subsequent iterations are tool-loop continuations.
+        inv_num = payload.get("invocationNum")
+        if isinstance(inv_num, int) and not isinstance(inv_num, bool) and inv_num > 0:
+            return None
+        category = config.mapped_category(cfg, event, agent="antigravity")
+        return _apply_spam_window(category, cfg, state, now) if category else None
+
+    if event == "PreToolUse":
+        tool_call = payload.get("toolCall")
+        if isinstance(tool_call, dict) and tool_call.get("name") in ("ask_question", "ask_permission"):
+            return "input.required"
+
+    elif event == "PostToolUse":
+        err = payload.get("error")
+        if isinstance(err, str) and err.strip():
+            return "task.error"
+
+    elif event == "Stop":
+        reason = payload.get("terminationReason")
+        err = payload.get("error")
+        if reason == "max_steps_exceeded":
+            return "resource.limit"
+        if reason == "error" or (isinstance(err, str) and err.strip()):
+            return "task.error"
+
+    return config.mapped_category(cfg, event, agent="antigravity")
+
+
+def category_for_event(
+    event: str,
+    cfg: dict,
+    state: dict,
+    now: int,
+    payload: dict | None = None,
+    agent: str = "",
+) -> str | None:
     """Map a hook event to a CESP category, handling the spam special case."""
-    category = config.mapped_category(cfg, event)
+    if agent == "antigravity":
+        return _antigravity_category(event, cfg, state, now, payload or {})
+    category = config.mapped_category(cfg, event, agent=agent)
     if category is None:
         return None
     if event == config.SPAM_SOURCE_EVENT:
-        last = state["last_played_ms"].get(config.SPAM_SOURCE_EVENT, 0)
-        window = int(cfg.get("spam_window_ms", 4000))
-        state["last_played_ms"][config.SPAM_SOURCE_EVENT] = now
-        if isinstance(last, (int, float)) and last and now - last < window:
-            return config.SPAM_CATEGORY
+        return _apply_spam_window(category, cfg, state, now)
     return category
 
 
 def cmd_event(event: str) -> None:
-    read_hook_payload()  # drained so the agent's pipe never blocks
+    payload = read_hook_payload()  # drained so the agent's pipe never blocks
     cfg = config.load_user_config()
+    agent = os.environ.get("PEON_AGENT", "").strip()
 
     state = load_play_state()
     now = now_ms()
     if event == "SessionStart":
         tick_rotation(cfg, state)
-    category = category_for_event(event, cfg, state, now)
+    category = category_for_event(event, cfg, state, now, payload=payload, agent=agent)
     # `category_for_event` records the prompt timestamp used for spam detection.
     save_play_state(state)
-    if category is None:
-        return
-    play_category(category, cfg)
+    if category is not None:
+        play_category(category, cfg)
+    if agent == "antigravity":
+        # Antigravity command hooks expect a valid JSON object on stdout.
+        print("{}")
 
 
 # ------------------------------- subcommands ------------------------------
@@ -712,5 +764,7 @@ if __name__ == "__main__":
         raise
     except Exception as e:
         _log(f"top-level exception: {e}\n{traceback.format_exc()}")
+        if os.environ.get("PEON_AGENT", "").strip() == "antigravity":
+            print("{}")
         # Hooks must never fail the agent, so exit 0 even on a crash.
         sys.exit(0)

@@ -1,5 +1,9 @@
 # peon-py
 
+<p align="center">
+  <img src="assets/logo.svg" alt="peon-py logo" width="120" height="120">
+</p>
+
 Another [openpeon](https://openpeon.com/) implementation for Claude Code / Codex plugin.
 
 ## Why

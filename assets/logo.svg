@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="peon-py logo">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1E2520"/>
+      <stop offset="100%" stop-color="#131814"/>
+    </linearGradient>
+    <linearGradient id="skin" x1="0.2" y1="0.1" x2="0.8" y2="0.9">
+      <stop offset="0%" stop-color="#84BD58"/>
+      <stop offset="100%" stop-color="#538732"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 1:1 rounded badge -->
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#bg)" stroke="#2F3B31" stroke-width="2"/>
+
+  <!-- Split gear ring (left orange, right green, echoing OpenPeon) -->
+  <g transform="translate(64 64)" fill="none" stroke-linecap="round">
+    <!-- Left orange arc + teeth -->
+    <path d="M -2 -44 A 44 44 0 0 0 -2 44" stroke="#E88C24" stroke-width="7"/>
+    <g fill="#E88C24">
+      <rect x="-6" y="-51" width="8" height="8" rx="2" transform="rotate(-18)"/>
+      <rect x="-6" y="-51" width="8" height="8" rx="2" transform="rotate(-54)"/>
+      <rect x="-6" y="-51" width="8" height="8" rx="2" transform="rotate(-90)"/>
+      <rect x="-6" y="-51" width="8" height="8" rx="2" transform="rotate(-126)"/>
+      <rect x="-6" y="-51" width="8" height="8" rx="2" transform="rotate(-162)"/>
+    </g>
+    <!-- Right green arc + teeth -->
+    <path d="M 2 -44 A 44 44 0 0 1 2 44" stroke="#629B3D" stroke-width="7"/>
+    <g fill="#629B3D">
+      <rect x="-2" y="-51" width="8" height="8" rx="2" transform="rotate(18)"/>
+      <rect x="-2" y="-51" width="8" height="8" rx="2" transform="rotate(54)"/>
+      <rect x="-2" y="-51" width="8" height="8" rx="2" transform="rotate(90)"/>
+      <rect x="-2" y="-51" width="8" height="8" rx="2" transform="rotate(126)"/>
+      <rect x="-2" y="-51" width="8" height="8" rx="2" transform="rotate(162)"/>
+    </g>
+  </g>
+
+  <!-- Stylized Peon head -->
+  <g stroke="#1C2E12" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round">
+    <!-- Pointed left ear -->
+    <path d="M 39 56 L 23 48 L 34 66 Z" fill="#5D923A"/>
+    <!-- Head & jaw -->
+    <path d="M 41 44
+             C 44 33, 62 31, 72 40
+             C 78 46, 80 55, 78 63
+             L 81 71
+             C 82 77, 78 83, 71 86
+             C 62 90, 47 89, 41 81
+             C 36 74, 36 53, 41 44 Z"
+          fill="url(#skin)"/>
+    <!-- Brow ridge -->
+    <path d="M 46 50 Q 56 46 65 51 Q 71 48 76 50" fill="none" stroke="#243B16" stroke-width="3"/>
+    <!-- Eyes -->
+    <ellipse cx="56" cy="56" rx="4.2" ry="3" fill="#FFF8E7" stroke="#1C2E12" stroke-width="1.8"/>
+    <ellipse cx="70" cy="56" rx="3.8" ry="2.8" fill="#FFF8E7" stroke="#1C2E12" stroke-width="1.8"/>
+    <circle cx="57" cy="56" r="1.4" fill="#1C2E12" stroke="none"/>
+    <circle cx="71" cy="56" r="1.3" fill="#1C2E12" stroke="none"/>
+    <!-- Mouth & grin -->
+    <path d="M 49 71 Q 64 76 77 69 Q 76 80 63 81 Q 51 81 49 71 Z" fill="#2A1714"/>
+    <!-- Tusks -->
+    <path d="M 52 75 L 49 65 L 57 74 Z" fill="#F5EED8" stroke="#1C2E12" stroke-width="1.8"/>
+    <path d="M 73 74 L 77 63 L 78 73 Z" fill="#F5EED8" stroke="#1C2E12" stroke-width="1.8"/>
+  </g>
+
+  <!-- Orange soundwaves (CESP audio ping) -->
+  <g fill="none" stroke="#F2992E" stroke-width="3.6" stroke-linecap="round">
+    <path d="M 87 56 A 14 14 0 0 1 87 72"/>
+    <path d="M 94 50 A 22 22 0 0 1 94 78"/>
+    <path d="M 101 44 A 30 30 0 0 1 101 84"/>
+  </g>
+</svg>

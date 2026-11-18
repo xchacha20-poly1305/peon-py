@@ -28,6 +28,8 @@
       "Write"
     ],
     "websiteURL": "https://openpeon.com",
-    "brandColor": "#D97757"
+    "brandColor": "#D97757",
+    "composerIcon": "./assets/logo.svg",
+    "logo": "./assets/logo.svg"
   }
 }

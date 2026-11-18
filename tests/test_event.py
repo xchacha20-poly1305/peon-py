@@ -485,3 +485,54 @@ def test_doctor_reports_the_audio_check(paths, capsys):
     out = capsys.readouterr().out
     assert "pack audio   : 1 file(s) fail" in out
     assert "sounds/bad.wav" in out
+
+
+def test_antigravity_pre_invocation_respects_invocation_num_and_spam():
+    cfg = config.load_user_config()
+    state = {"last_file": {}, "last_played_ms": {}}
+    assert peon_event.category_for_event(
+        "PreInvocation", cfg, state, 10_000, payload={"invocationNum": 0}, agent="antigravity"
+    ) == "task.acknowledge"
+    assert peon_event.category_for_event(
+        "PreInvocation", cfg, state, 10_500, payload={"invocationNum": 1}, agent="antigravity"
+    ) is None
+    assert peon_event.category_for_event(
+        "PreInvocation", cfg, state, 11_000, payload={"invocationNum": 0}, agent="antigravity"
+    ) == "user.spam"
+
+
+def test_antigravity_tool_and_stop_payload_mapping():
+    cfg = config.load_user_config()
+    state = {"last_file": {}, "last_played_ms": {}}
+    assert peon_event.category_for_event(
+        "PreToolUse", cfg, state, 1000,
+        payload={"toolCall": {"name": "ask_question"}}, agent="antigravity",
+    ) == "input.required"
+    assert peon_event.category_for_event(
+        "PreToolUse", cfg, state, 1000,
+        payload={"toolCall": {"name": "run_command"}}, agent="antigravity",
+    ) == "task.progress"
+    assert peon_event.category_for_event(
+        "PostToolUse", cfg, state, 1000,
+        payload={"error": "exit status 1"}, agent="antigravity",
+    ) == "task.error"
+    assert peon_event.category_for_event(
+        "Stop", cfg, state, 1000,
+        payload={"terminationReason": "max_steps_exceeded"}, agent="antigravity",
+    ) == "resource.limit"
+    assert peon_event.category_for_event(
+        "Stop", cfg, state, 1000,
+        payload={"terminationReason": "error"}, agent="antigravity",
+    ) == "task.error"
+    assert peon_event.category_for_event(
+        "Stop", cfg, state, 1000,
+        payload={"terminationReason": "model_stop"}, agent="antigravity",
+    ) == "task.complete"
+
+
+def test_antigravity_cmd_event_writes_json_stdout(paths, monkeypatch, capsys):
+    monkeypatch.setenv("PEON_AGENT", "antigravity")
+    monkeypatch.setattr(peon_event, "read_hook_payload", lambda: {"terminationReason": "model_stop"})
+    monkeypatch.setattr(peon_event, "play_category", lambda *a, **kw: None)
+    peon_event.cmd_event("Stop")
+    assert capsys.readouterr().out.strip() == "{}"
