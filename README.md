@@ -83,6 +83,12 @@ Update after pulling new changes:
 codex plugin add peon-py@anrong-plugins
 ```
 
+### Antigravity
+
+```shell
+agy plugin install https://github.com/xchacha20-poly1305/peon-py
+```
+
 ## Commands
 
 | Command | What it does |
