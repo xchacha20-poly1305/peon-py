@@ -532,7 +532,12 @@ def test_antigravity_tool_and_stop_payload_mapping():
 
 def test_antigravity_cmd_event_writes_json_stdout(paths, monkeypatch, capsys):
     monkeypatch.setenv("PEON_AGENT", "antigravity")
-    monkeypatch.setattr(peon_event, "read_hook_payload", lambda: {"terminationReason": "model_stop"})
     monkeypatch.setattr(peon_event, "play_category", lambda *a, **kw: None)
+
+    monkeypatch.setattr(peon_event, "read_hook_payload", lambda: {"terminationReason": "model_stop"})
     peon_event.cmd_event("Stop")
     assert capsys.readouterr().out.strip() == "{}"
+
+    monkeypatch.setattr(peon_event, "read_hook_payload", lambda: {"toolCall": {"name": "run_command"}})
+    peon_event.cmd_event("PreToolUse")
+    assert capsys.readouterr().out.strip() == '{"decision": "allow"}'

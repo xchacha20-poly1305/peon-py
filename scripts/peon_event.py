@@ -407,6 +407,14 @@ def category_for_event(
     return category
 
 
+def _antigravity_stdout(event: str) -> str:
+    """Return the JSON response Antigravity expects on stdout for `event`."""
+    if event == "PreToolUse":
+        # `decision` is required on PreToolUse; omitting it blocks tool calls.
+        return '{"decision": "allow"}'
+    return "{}"
+
+
 def cmd_event(event: str) -> None:
     payload = read_hook_payload()  # drained so the agent's pipe never blocks
     cfg = config.load_user_config()
@@ -422,8 +430,7 @@ def cmd_event(event: str) -> None:
     if category is not None:
         play_category(category, cfg)
     if agent == "antigravity":
-        # Antigravity command hooks expect a valid JSON object on stdout.
-        print("{}")
+        print(_antigravity_stdout(event))
 
 
 # ------------------------------- subcommands ------------------------------
@@ -765,6 +772,6 @@ if __name__ == "__main__":
     except Exception as e:
         _log(f"top-level exception: {e}\n{traceback.format_exc()}")
         if os.environ.get("PEON_AGENT", "").strip() == "antigravity":
-            print("{}")
+            print(_antigravity_stdout("PreToolUse" if "PreToolUse" in sys.argv[1:] else ""))
         # Hooks must never fail the agent, so exit 0 even on a crash.
         sys.exit(0)
